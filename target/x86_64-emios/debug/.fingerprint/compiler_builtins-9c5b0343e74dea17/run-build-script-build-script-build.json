@@ -1,0 +1,1 @@
+{"rustc":8973912982093076675,"features":"","target":0,"profile":0,"path":0,"deps":[[8427705233296525817,"build_script_build",false,13028469681952511379]],"local":[{"RerunIfChanged":{"output":"x86_64-emios/debug/build/compiler_builtins-9c5b0343e74dea17/output","paths":["build.rs"]}}],"rustflags":[],"metadata":0,"config":0,"compile_kind":0}
