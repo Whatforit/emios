@@ -4,42 +4,62 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 use core::panic::PanicInfo;
+mod serial;
 mod vga_buffer;
 
-/// This function is called on panic.
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
     loop {}
 }
 
-static HELLO: &[u8] = b"Hello Emi!";
+#[cfg(test)]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+    serial_println!("[failed]\n");
+    serial_println!("Error: {}\n", info);
+    exit_qemu(QemuExitCode::Failed);
+    loop {}
+}
 
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     println!("Hello World{}", "!");
     #[cfg(test)]
     test_main();
-    let mut i = 0;
-    loop {
-        println!("{}", i);
-        i += 1;
-    }
+    loop {}
 }
 
 #[cfg(test)]
-fn test_runner(tests: &[&dyn Fn()]) {
+fn test_runner(tests: &[&dyn Testable]) {
+    serial_println!("Running {} tests", tests.len());
     println!("Running {} tests", tests.len());
     for test in tests {
-        test();
+        test.run();
     }
+
+    exit_qemu(QemuExitCode::Success);
 }
 
 #[test_case]
 fn trivial_assertion() {
-    print!("trivial assertion... ");
     assert_eq!(1, 1);
-    println!("[ok]");
+}
+
+pub trait Testable {
+    fn run(&self) -> ();
+}
+
+impl<T> Testable for T
+where
+    T: Fn(),
+{
+    fn run(&self) {
+        serial_print!("{}...\t", core::any::type_name::<T>());
+        self();
+        serial_println!("[ok]");
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
